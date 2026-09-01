@@ -4,6 +4,7 @@ from ..protocol import Paper
 from loguru import logger
 from typing import Any
 from time import sleep
+from datetime import datetime, timedelta
 
 @register_retriever("biorxiv")
 class BiorxivRetriever(BaseRetriever):
@@ -34,9 +35,17 @@ class BiorxivRetriever(BaseRetriever):
         if len(collection) == 0:
             logger.warning(f"No paper found. API Message: {result['messages']}")
             return []
-        all_dates = set(c['date'] for c in collection)
-        latest_date = sorted(all_dates)[-1]
-        collection = [c for c in collection if c['date'] == latest_date]
+        
+        all_dates = set(c["date"] for c in collection)
+        latest_date = max(all_dates)
+
+        latest = datetime.strptime(latest_date, "%Y-%m-%d")
+        start_date = latest - timedelta(days=3)
+
+        collection = [
+            c for c in collection
+            if start_date <= datetime.strptime(c["date"], "%Y-%m-%d") <= latest
+        ]
         categories = [c.lower() for c in self.retriever_config.category]
         collection = [c for c in collection if c['category'] in categories]
         if self.config.executor.debug:
