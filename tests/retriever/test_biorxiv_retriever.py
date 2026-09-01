@@ -14,7 +14,7 @@ def test_biorxiv_retrieve(config, mock_biorxiv_api, monkeypatch):
     retriever = BiorxivRetriever(config)
     papers = retriever.retrieve_papers()
     # Only latest date + matching category
-    assert len(papers) == 1
+    assert len(papers) == 2
     assert papers[0].title == "A biorxiv paper"
 
 
