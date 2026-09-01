@@ -47,7 +47,11 @@ class BiorxivRetriever(BaseRetriever):
             if start_date <= datetime.strptime(c["date"], "%Y-%m-%d") <= latest
         ]
         categories = [c.lower() for c in self.retriever_config.category]
+        logger.info(f"BioRxiv latest date: {latest_date}")
+        logger.info(f"BioRxiv papers before category filtering: {len(collection)}")
+        logger.info(f"BioRxiv categories returned: {sorted(set(c['category'] for c in collection))}")
         collection = [c for c in collection if c['category'] in categories]
+        logger.info(f"BioRxiv papers after category filtering: {len(collection)}")
         if self.config.executor.debug:
             collection = collection[:10]
         return collection
