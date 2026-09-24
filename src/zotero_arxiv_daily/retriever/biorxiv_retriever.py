@@ -17,12 +17,20 @@ class BiorxivRetriever(BaseRetriever):
             raise ValueError(f"category must be specified for {self.name}")
 
     def _retrieve_raw_papers(self) -> list[dict[str, Any]]:
+        # 1. 伪装成浏览器，防止被bioRxiv服务器拦截
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        }
+        
         api_url = f"https://api.biorxiv.org/details/{self.server}/2d"
         retry_num = 10
         delay_time = 10
+        response = None
+
         for i in range(retry_num):
             try:
-                response = requests.get(api_url)
+                # 发送请求时带上伪装头（headers）
+                response = requests.get(api_url, headers=headers, timeout=30)
                 response.raise_for_status()
                 break
             except Exception as e:
@@ -31,7 +39,19 @@ class BiorxivRetriever(BaseRetriever):
                 else:
                     logger.warning(f"Failed to retrieve papers: {str(e)}. Retry in {delay_time} seconds.")
                     sleep(delay_time)
-        result = response.json()
+
+        # 2. 检查服务器到底返回了什么（关键修复！）
+        if not response.text or not response.text.strip():
+            logger.warning("bioRxiv API 返回了空内容。")
+            return []
+
+        try:
+            result = response.json()
+        except Exception as e:
+            # 如果解析JSON失败，不要直接崩溃，而是打印出服务器返回的前500个字符看看是什么
+            logger.error(f"JSON解析失败！服务器返回的内容可能不是JSON格式。")
+            logger.error(f"返回的原始内容前500字符: {response.text[:500]}")
+            return []
         collection = result['collection']
         if len(collection) == 0:
             logger.warning(f"No paper found. API Message: {result['messages']}")
