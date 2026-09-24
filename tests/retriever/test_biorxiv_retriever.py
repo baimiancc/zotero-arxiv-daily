@@ -25,7 +25,7 @@ def test_biorxiv_empty_response(config, monkeypatch):
     empty = {"messages": [{"status": "ok"}], "collection": []}
 
     def _patched(url, **kw):
-        resp = SimpleNamespace(status_code=200, raise_for_status=lambda: None)
+        resp = SimpleNamespace(status_code=200, raise_for_status=lambda: None, text='{"messages": [{"status": "ok"}], "collection": []}')
         resp.json = lambda: empty
         return resp
 
@@ -52,7 +52,7 @@ def test_biorxiv_orders_unpadded_dates_chronologically(config, monkeypatch):
     }
 
     def _patched(url, **kw):
-        result = SimpleNamespace(status_code=200, raise_for_status=lambda: None)
+        result = SimpleNamespace(status_code=200, raise_for_status=lambda: None, text='{"messages": [{"status": "ok"}], "collection": [{"date": "2026-06-30", "category": "neuroscience"}, {"date": "2026-07-15", "category": "bioinformatics"}]}')
         result.json = lambda: response
         return result
 
