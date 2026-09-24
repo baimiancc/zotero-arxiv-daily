@@ -36,9 +36,13 @@ class BiorxivRetriever(BaseRetriever):
                     sleep(delay_time)
 
         # 2. 检查服务器到底返回了什么（关键修复！）
-        response_text = getattr(response, "text", None)
-        if not response_text is not None and not response_text.strip():
-            logger.warning("bioRxiv API 返回了空内容。")
+        try:
+            response_text = response.text or ""
+        except Exception:
+            logger.warning("无法读取 bioRxiv API 返回内容")
+            return []
+        if not response_text.strip():
+            logger.warning("bioRxiv API 返回空内容")
             return []
 
         try:
