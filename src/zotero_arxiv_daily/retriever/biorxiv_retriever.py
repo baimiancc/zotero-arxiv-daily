@@ -37,12 +37,12 @@ class BiorxivRetriever(BaseRetriever):
 
         # 2. 检查服务器到底返回了什么（关键修复！）
         try:
-            response_text = response.text or ""
-        except Exception:
-            logger.warning("无法读取 bioRxiv API 返回内容")
-            return []
-        if not response_text.strip():
-            logger.warning("bioRxiv API 返回空内容")
+            result = response.json()
+        except Exception as e:
+            logger.error("JSON解析失败！服务器返回的内容可能不是JSON格式。")
+            # 用 getattr 安全打印原文本，防止测试对象没有该属性报错
+            raw_text = getattr(response, "text", "")
+            logger.error(f"返回的原始内容前500字符: {raw_text[:500]}")
             return []
 
         try:
