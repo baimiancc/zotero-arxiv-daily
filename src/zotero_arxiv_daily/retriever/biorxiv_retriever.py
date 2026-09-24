@@ -1,7 +1,9 @@
 from datetime import datetime
-import os  # 新增：用于读取环境变量
 import json # 新增：用于处理 JSON 异常
 import requests
+import os
+proxy_url = os.environ.get("BIORXIV_PROXY")
+proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
 from .base import BaseRetriever, register_retriever
 from ..protocol import Paper
 from loguru import logger
@@ -36,7 +38,8 @@ class BiorxivRetriever(BaseRetriever):
                 response = requests.get(
                     api_url, 
                     headers=headers,  
-                    timeout=30
+                    timeout=30,
+                    proxies=proxies
                 )
                 response.raise_for_status()
                 
