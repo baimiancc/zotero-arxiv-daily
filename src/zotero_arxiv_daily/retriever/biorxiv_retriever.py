@@ -28,7 +28,7 @@ class BiorxivRetriever(BaseRetriever):
         for i in range(retry_num):
             try:
                 # 发送请求时带上伪装头（headers）
-                response = requests.get(api_url, headers=headers, timeout=30, proxies=proxies)
+                response = requests.get(api_url, headers=headers, timeout=60, proxies=proxies)
                 response.raise_for_status()
                 break
             except Exception as e:
