@@ -27,9 +27,6 @@ class BiorxivRetriever(BaseRetriever):
                 # 发送请求时带上伪装头（headers）
                 response = requests.get(api_url, headers=headers, timeout=30)
                 response.raise_for_status()
-                # 打印状态码和响应头，看看服务器到底怎么回复的
-                print(f"DEBUG: bioRxiv 状态码: {response.status_code}")
-                print(f"DEBUG: 响应头: {response.headers}")
                 break
             except Exception as e:
                 if i == retry_num - 1:
@@ -46,14 +43,6 @@ class BiorxivRetriever(BaseRetriever):
             # 用 getattr 安全打印原文本，防止测试对象没有该属性报错
             raw_text = getattr(response, "text", "")
             logger.error(f"返回的原始内容前500字符: {raw_text[:500]}")
-            return []
-
-        try:
-            result = response.json()
-        except Exception as e:
-            # 如果解析JSON失败，不要直接崩溃，而是打印出服务器返回的前500个字符看看是什么
-            logger.error("JSON解析失败！服务器返回的内容可能不是JSON格式。")
-            logger.error(f"返回的原始内容前500字符: {response.text[:500]}")
             return []
             
         collection = result.get("collection", [])
