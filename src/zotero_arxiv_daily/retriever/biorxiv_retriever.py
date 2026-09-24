@@ -1,9 +1,6 @@
 from datetime import datetime
 
 import requests
-import os
-proxy_url = os.environ.get("BIORXIV_PROXY")
-proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
 from .base import BaseRetriever, register_retriever
 from ..protocol import Paper
 from loguru import logger
@@ -14,21 +11,18 @@ from time import sleep
 class BiorxivRetriever(BaseRetriever):
     server = "biorxiv"
 
+    def __init__(self, config):
+        super().__init__(config)
+        if self.retriever_config.category is None:
+            raise ValueError(f"category must be specified for {self.name}")
+
     def _retrieve_raw_papers(self) -> list[dict[str, Any]]:
-        # 1. 伪装成浏览器，防止被bioRxiv服务器拦截
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-        }
-        
         api_url = f"https://api.biorxiv.org/details/{self.server}/2d"
         retry_num = 10
         delay_time = 10
-        response = None
-
         for i in range(retry_num):
             try:
-                # 发送请求时带上伪装头（headers）
-                response = requests.get(api_url, headers=headers, timeout=60, proxies=proxies)
+                response = requests.get(api_url)
                 response.raise_for_status()
                 break
             except Exception as e:
@@ -37,22 +31,11 @@ class BiorxivRetriever(BaseRetriever):
                 else:
                     logger.warning(f"Failed to retrieve papers: {str(e)}. Retry in {delay_time} seconds.")
                     sleep(delay_time)
-
-        # 2. 检查服务器到底返回了什么（关键修复！）
-        try:
-            result = response.json()
-        except Exception as e:
-            logger.error("JSON解析失败！服务器返回的内容可能不是JSON格式。")
-            # 用 getattr 安全打印原文本，防止测试对象没有该属性报错
-            raw_text = getattr(response, "text", "")
-            logger.error(f"返回的原始内容前500字符: {raw_text[:500]}")
-            return []
-            
-        collection = result.get("collection", [])
+        result = response.json()
+        collection = result['collection']
         if len(collection) == 0:
-            logger.warning(f"No paper found. API Message: {result.get('messages', '')}")
+            logger.warning(f"No paper found. API Message: {result['messages']}")
             return []
-            
         dated_collection = [
             (datetime.strptime(c['date'], "%Y-%m-%d").date(), c)
             for c in collection
@@ -60,7 +43,7 @@ class BiorxivRetriever(BaseRetriever):
         latest_date = max(date for date, _ in dated_collection)
         collection = [c for date, c in dated_collection if date == latest_date]
         categories = [c.lower() for c in self.retriever_config.category]
-        collection = [c for c in collection if c["category"] in categories]
+        collection = [c for c in collection if c['category'] in categories]
         if self.config.executor.debug:
             collection = collection[:10]
         return collection
