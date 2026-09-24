@@ -27,6 +27,9 @@ class BiorxivRetriever(BaseRetriever):
                 # 发送请求时带上伪装头（headers）
                 response = requests.get(api_url, headers=headers, timeout=30)
                 response.raise_for_status()
+                # 打印状态码和响应头，看看服务器到底怎么回复的
+                print(f"DEBUG: bioRxiv 状态码: {response.status_code}")
+                print(f"DEBUG: 响应头: {response.headers}")
                 break
             except Exception as e:
                 if i == retry_num - 1:
