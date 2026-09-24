@@ -1,6 +1,9 @@
 from datetime import datetime
 
 import requests
+import os
+proxy_url = os.environ.get("BIORXIV_PROXY")
+proxies = {"http": proxy_url, "https": proxy_url} if proxy_url else None
 from .base import BaseRetriever, register_retriever
 from ..protocol import Paper
 from loguru import logger
@@ -25,7 +28,7 @@ class BiorxivRetriever(BaseRetriever):
         for i in range(retry_num):
             try:
                 # 发送请求时带上伪装头（headers）
-                response = requests.get(api_url, headers=headers, timeout=30)
+                response = requests.get(api_url, headers=headers, timeout=30, proxies=proxies)
                 response.raise_for_status()
                 break
             except Exception as e:
